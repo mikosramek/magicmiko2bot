@@ -21,9 +21,6 @@ cc.getCommands = () => {
   )
 }
 
-cc.updateCommandsFile = (data) => {
-  
-}
 
 cc.addCommand = (newCommand, message, callback, target) => {
   //check if newCommand exists, if not
@@ -69,6 +66,29 @@ cc.removeCommand = (commandToRemove, callback, target) => {
 }
 
 cc.init = () => {
+  if(!fs.existsSync(filePath)){
+    fs.mkdirSync(filePath, (err) => { 
+      if(err) throw err; 
+      fs.writeFile(
+        filePath + fileName,
+        JSON.stringify({}),
+        'utf-8',
+        (err) => {
+          if (err) { throw err }
+        }
+      )
+    });
+  }
+  if(!fs.existsSync(filePath + fileName)){
+    fs.writeFile(
+      filePath + fileName,
+      JSON.stringify({}),
+      'utf-8',
+      (err) => {
+        if (err) { throw err }
+      }
+    )
+  }
   cc.getCommands();
 }
 
