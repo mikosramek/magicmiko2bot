@@ -5,11 +5,13 @@ require('dotenv').config({
 
 
 const tmi = require('tmi.js');
-const axios = require('axios');
 
-const commands = require('./commands');
-const cc = commands.cc;
+
+const cc = require('./commands').cc;
 cc.init();
+
+const spotify = require('./spotify').s;
+spotify.init(process.env.SPOTIFY_CLIENT_ID, process.env.SPOTIFY_CLIENT_SECRET);
 
 const utility = require('./utility').utility;
 
@@ -116,7 +118,7 @@ function rollDice () {
 
 // Called every time the bot connects to Twitch chat
 function onConnectedHandler (addr, port) {
-  console.clear();
+  // console.clear();
   console.log('mikobot up and running!')
   console.log(`* Connected to ${addr}:${port}`);
 }
