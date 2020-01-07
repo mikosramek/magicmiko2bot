@@ -4,6 +4,7 @@ Boilerplate code from: https://dev.twitch.tv/docs/irc/
 
 ## Tech Used:
 - Node.js
+- pkg - https://github.com/zeit/pkg (pkg . -t node10-macos-x64 --out-path ./dist)
 
 ## Current Modules:
 - tmi.js - https://github.com/tmijs

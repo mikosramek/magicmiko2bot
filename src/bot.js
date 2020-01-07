@@ -1,5 +1,3 @@
-//pkg . -t node10-macos-x64
-
 const path = require('path');
 require('dotenv').config({
   path: path.join(__dirname, '../.env')
