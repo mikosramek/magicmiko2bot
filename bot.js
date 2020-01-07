@@ -1,4 +1,9 @@
-require('dotenv').config();
+//pkg . -t node10-macos-x64
+
+const path = require('path');
+require('dotenv').config({
+  path: path.join(__dirname, '.env')
+});
 
 const tmi = require('tmi.js');
 const axios = require('axios');
