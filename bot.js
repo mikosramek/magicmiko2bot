@@ -33,26 +33,25 @@ client.connect();
 // Called every time a message comes in
 function onMessageHandler (target, context, msg, self) {
   if (self) { return; } // Ignore messages from the bot
-  // if (context.badges.broadcaster !== '1' || context.badges.moderator !== '1') { return; }
-  console.log('user is a broadcaster:', context.badges.broadcaster === '1');
-  console.log('user is a moderator:', context.badges.moderator === '1');
+  //Ignore messages from non-broadcasters / moderators
+  if(context.badges !== null && (context.badges.broadcaster !== '1' && context.badges.moderator !== '1')) { return; }
   // Remove whitespace from chat message
   const commandParts = msg.split(' ');
-  console.log(commandParts);
+  //grab the command
   const commandName = commandParts[0].toLowerCase();
-
-
   // If the command is known, let's execute it
   if (commandName === '!dice') {
     const num = rollDice();
     client.say(target, `You rolled a ${num}`);
     console.log(`* Executed ${commandName} command`);
   } else if(commandName === '!addcommand') {
+    //Grab the text after the new command and make it a single string
     const newCommandMessage = compressArrayOfString(commandParts.slice(2));
     cc.addCommand(commandParts[1], newCommandMessage, onCommandChangeHandler, target);
   } else if(commandName === '!removecommand') {
     cc.removeCommand(commandParts[1], onCommandChangeHandler, target);
   } else if(commandName === '!updatecommand') {
+    //Grab the text after the new command and make it a single string
     const newCommandMessage = compressArrayOfString(commandParts.slice(2));
     cc.udpateCommand(commandParts[1], newCommandMessage, onCommandChangeHandler, target);
   } else if(commandName === '!cc') {
