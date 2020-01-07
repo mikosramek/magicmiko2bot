@@ -2,8 +2,8 @@
   "name": "twitch-bot",
   "version": "1.0.0",
   "description": "a twitch bot",
-  "main": "bot.js",
-  "bin": "bot.js",
+  "main": "src/bot.js",
+  "bin": "src/bot.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
