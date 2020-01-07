@@ -3,12 +3,16 @@ require('dotenv').config({
   path: path.join(__dirname, '../.env')
 });
 
+
 const tmi = require('tmi.js');
 const axios = require('axios');
 
 const commands = require('./commands');
 const cc = commands.cc;
 cc.init();
+
+const utility = require('./utility').utility;
+
 
 // Define configuration options
 const opts = {
@@ -42,29 +46,42 @@ function onMessageHandler (target, context, msg, self) {
   const commandParts = msg.split(' ');
   //grab the command
   const commandName = commandParts[0].toLowerCase();
+
   // If the command is known, let's execute it
-  if (commandName === '!dice') {
+  if (commandName === '!dice') 
+  {
     const num = rollDice();
     client.say(target, `You rolled a ${num}`);
     console.log(`* Executed ${commandName} command`);
-  } else if(commandName === '!addcommand') {
+  } 
+  else if (commandName === '!addcommand') 
+  {
     //Grab the text after the new command and make it a single string
-    const newCommandMessage = compressArrayOfString(commandParts.slice(2));
+    const newCommandMessage = utility.compressArrayOfString(commandParts.slice(2));
     cc.addCommand(commandParts[1], newCommandMessage, onCommandChangeHandler, target);
-  } else if(commandName === '!removecommand') {
+  } 
+  else if (commandName === '!removecommand') 
+  {
     cc.removeCommand(commandParts[1], onCommandChangeHandler, target);
-  } else if(commandName === '!updatecommand') {
+  } 
+  else if (commandName === '!updatecommand') 
+  {
     //Grab the text after the new command and make it a single string
-    const newCommandMessage = compressArrayOfString(commandParts.slice(2));
+    const newCommandMessage = utility.compressArrayOfString(commandParts.slice(2));
     cc.udpateCommand(commandParts[1], newCommandMessage, onCommandChangeHandler, target);
-  } else if(commandName === '!cc') {
+  } 
+  else if (commandName === '!cc') 
+  {
     listAllCommands(target);
-  } else if(commandName in cc.currentCommands) {
+  } 
+  else if (commandName in cc.currentCommands) 
+  {
     let name = '';
     if(commandParts[1]) { name = commandParts[1]; }
     const tmiMessage = cc.currentCommands[commandName].replace('$_', name);
     client.say(target, tmiMessage);
-  } else {
+  } 
+  else {
     console.log(`* Unknown command ${commandName}`);
   }
 }
@@ -97,17 +114,9 @@ function rollDice () {
   return Math.floor(Math.random() * sides) + 1;
 }
 
-const compressArrayOfString = (array) => {
-  let string = '';
-  array.forEach((s, i) => { 
-    string += s; 
-    if( i < array.length - 1 ) { string+=' '; } 
-  });
-  return string;
-}
-
-
 // Called every time the bot connects to Twitch chat
 function onConnectedHandler (addr, port) {
+  console.clear();
+  console.log('mikobot up and running!')
   console.log(`* Connected to ${addr}:${port}`);
 }
