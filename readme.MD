@@ -3,14 +3,16 @@ A Twitch bot for my twitch.tv channel that is not active, yet will provide pract
 Boilerplate code from: https://dev.twitch.tv/docs/irc/
 
 ## Tech Used:
-- Node.js
+- node.js
 - pkg - https://github.com/zeit/pkg (pkg . -t node10-macos-x64 --out-path ./dist)
+- express.js
 
 ## Current Modules:
 - tmi.js - https://github.com/tmijs
 - dotenv
 - fs
 - path
+- open
 
 ## Current Commands:
 - !dice
