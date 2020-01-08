@@ -54,7 +54,6 @@ function onMessageHandler (target, context, msg, self) {
   {
     const num = rollDice();
     client.say(target, `You rolled a ${num}`);
-    console.log(`* Executed ${commandName} command`);
   } 
   else if (commandName === '!song') 
   {
@@ -74,7 +73,7 @@ function onMessageHandler (target, context, msg, self) {
   {
     //Grab the text after the new command and make it a single string
     const newCommandMessage = utility.compressArrayOfString(commandParts.slice(2));
-    cc.udpateCommand(commandParts[1], newCommandMessage, chatMessageCallback, target);
+    cc.updateCommand(commandParts[1], newCommandMessage, chatMessageCallback, target);
   } 
   else if (commandName === '!cc') 
   {

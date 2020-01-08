@@ -2,7 +2,7 @@
 A Twitch bot for my twitch.tv channel that is not active, yet will provide practice creating a backend application.
 Boilerplate code from: https://dev.twitch.tv/docs/irc/
 
-## Tech Used:
+## Main Tech Used:
 - node.js
 - pkg - https://github.com/zeit/pkg (pkg . -t node10-macos-x64 --out-path ./dist)
 - express.js
@@ -13,6 +13,7 @@ Boilerplate code from: https://dev.twitch.tv/docs/irc/
 - fs
 - path
 - open
+- axios
 
 ## Current Commands:
 - !dice
