@@ -1,14 +1,13 @@
 const axios = require('axios');
-const http = require('http');
+const open = require('open');
 
 const spotify = {};
-
-// AQDfJR5ysAVhyruHwiWQ4U-QbewNTBTPGtW_5zQUYT57IsGH-8Ue5fXN1Y7RLkalMR-H2wPoa1IxeBtEOmMsU5nLRORFOqEw6nxgGbgNz9ljkjfvQdWvwNrXH0qxRmlI2rCmCqNPFC7h8BvucXssmxPkNOTFwFrTFYEhZqsBHddfl0DFbLZS2s2tGyuTu9TuBnZOyAuHMaf7LkINMPHvUE6x7EOmdKZVFbWYOJcpsNNAr3h79JE
+spotify.token = '';
 
 spotify.init = (clientId, clientSecret) => {
   spotify.clientId = clientId;
   spotify.clientSecret = clientSecret;
-
+  
   const express = require('express');
   const app = express();
   app.set('view engine', 'ejs');
@@ -16,47 +15,24 @@ spotify.init = (clientId, clientSecret) => {
 
   app.get('/', function (req, res) {
     const code = req.query.code;
-    if(code) {
+    if(code && spotify.token === '') {
       spotify.authCode = code;
+      console.log('Spotify Auth code acquired.')
       spotify.confirmAuth();
     }
     res.render('index');
   });
 
-  const url = `https://accounts.spotify.com/authorize?client_id=${clientId}&response_type=code&scope=user-read-private%20user-read-email&redirect_uri=http://localhost:${spotify.port}/`;
+  const url = `https://accounts.spotify.com/authorize?client_id=${spotify.clientId}&response_type=code&scope=user-read-private%20user-read-email%20user-read-currently-playing%20user-read-playback-state&redirect_uri=http://localhost:${spotify.port}/`;
 
   app.listen(spotify.port, function () {
-    console.log(`Spotify Auth listening for callback on port ${port}!`);
-    console.log(`Go to ${url} to link your spotify account.`)
+    console.log(`Spotify Auth listening for callback on port ${spotify.port}!`);
+    (async () => {
+      await open(url);
+    })();
   });
 
   
-}
-
-spotify.getToken = () => {
-  axios({
-    method: 'GET',
-    url: `https://accounts.spotify.com/authorize`,
-    dataResponse: 'json',
-    params: {
-      client_id:spotify.clientId,
-      response_type: 'code',
-      redirect_uri: 'http://localhost:3000/',
-      scope: 'user-read-private%20user-read-email'
-    }
-  }).then( (result) => {
-    console.log(result);
-
-    // csrf_token=AQCR2scheKPnu9EYKGgLtYd3Sz18y6cZcX8RmH7z8BVZjMfNPl89_fHs-rp7Xv3fkBZXuBN5zN660S2jpQ
-    // console.log(result);
-    // console.log(result.headers['set-cookie'][1]);
-    // const authToken = result.headers['set-cookie'][1].split(';')[0].replace('csrf_token=', '');
-    // console.log(authToken);
-    //AQDp04D0_7qnzxpMfEJJ4EbiztxdUC3zpjB2BMK5lahU2spaVNTyJgSQiFE-EW88PHmeTXMKjDQtzyhPM3LJjfT9cubOfNzam7bQhpW3r_z3PPaojGF7tv7mro13upA3avnQHeXnvwRZ6oSPre8utNJpJSK0Z6SwcRrixoh7SNm0PZDAPdNyEvdXyqXLi10v6X1Y8f-RYZZzyUqK8pXkWaO0kPgYmptsyMpE00VbtHwQFic6zG0
-    spotify.confirmAuth('token');
-  }).catch( (error) => {
-    console.log(error);
-  });
 }
 
 spotify.confirmAuth = () => {
@@ -64,46 +40,42 @@ spotify.confirmAuth = () => {
     'https://accounts.spotify.com/api/token', new URLSearchParams ( {
       grant_type: 'authorization_code',
       code: spotify.authCode,
-      redirect_uri: `http://localhost:${spotify.port}/`
+      redirect_uri: `http://localhost:${spotify.port}/`,
+      client_id: spotify.clientId,
+      client_secret: spotify.clientSecret
     }).toString(),
     {
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
-        'Authorization': `Basic ${clientId}:${clientSecret}`
       },
     }
   ).then( (response) => {
-    console.log(response);
+    spotify.token = response.data.access_token;
   }).catch( (error) => {
-    // console.log(error);
+    console.log("There's an error with Spotify Permissions");
   })
-
-
-  // console.log(auth);
-  // var auth = 'Basic ' + new Buffer(clientId + ':' + clientSecret);
-  // axios({
-  //   method: 'POST',
-  //   url: 'https://accounts.spotify.com/api/token',
-  //   dataResponse: 'json',
-  //   params : {
-  //     grant_type: 'client_credentials',
-  //     code: authToken,
-  //   },
-  //   data: {
-      
-      
-  //     // redirect_uri: 'https%3A%2F%2Fmikosramek.ca%2Fcallback',
-  //   },
-  //   headers: {
-  //     'Content-Type':'application/x-www-form-urlencoded',
-  //     'Authorization': auth,
-  //     'Accept':'application/json'
-  //   }
-  // }).then( (result) => {
-  //   console.log(result);
-  // }).catch( (error) => {
-  //   console.log(error.response);
-  // });
 }
+
+//
+spotify.getCurrentSong = (callback, target) => {
+  if(spotify.token !== '') {
+    axios({
+      method: 'GET',
+      url: 'https://api.spotify.com/v1/me/player/currently-playing',
+      dataResponse: 'json',
+      headers: {
+        'Authorization': `Bearer ${spotify.token}`
+      }
+    }).then( (result) => {
+      const song = result.data.item;
+      const songInfo = `Currently listening to a ${song.type} called ${song.name}, by ${song.artists[0].name}.`;
+      callback(target, songInfo);
+    }).catch( (error) => {
+      console.log("Cannot get current Song");
+      callback(target, 'Current song info not available.');
+    });
+  }
+}
+
 
 exports.s = spotify;

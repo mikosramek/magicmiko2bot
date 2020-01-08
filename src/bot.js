@@ -56,21 +56,25 @@ function onMessageHandler (target, context, msg, self) {
     client.say(target, `You rolled a ${num}`);
     console.log(`* Executed ${commandName} command`);
   } 
+  else if (commandName === '!song') 
+  {
+    spotify.getCurrentSong(chatMessageCallback, target);
+  } 
   else if (commandName === '!addcommand') 
   {
     //Grab the text after the new command and make it a single string
     const newCommandMessage = utility.compressArrayOfString(commandParts.slice(2));
-    cc.addCommand(commandParts[1], newCommandMessage, onCommandChangeHandler, target);
+    cc.addCommand(commandParts[1], newCommandMessage, chatMessageCallback, target);
   } 
   else if (commandName === '!removecommand') 
   {
-    cc.removeCommand(commandParts[1], onCommandChangeHandler, target);
+    cc.removeCommand(commandParts[1], chatMessageCallback, target);
   } 
   else if (commandName === '!updatecommand') 
   {
     //Grab the text after the new command and make it a single string
     const newCommandMessage = utility.compressArrayOfString(commandParts.slice(2));
-    cc.udpateCommand(commandParts[1], newCommandMessage, onCommandChangeHandler, target);
+    cc.udpateCommand(commandParts[1], newCommandMessage, chatMessageCallback, target);
   } 
   else if (commandName === '!cc') 
   {
@@ -88,7 +92,7 @@ function onMessageHandler (target, context, msg, self) {
   }
 }
 
-const onCommandChangeHandler = (target, message) => {
+const chatMessageCallback = (target, message) => {
   client.say(target, message);
 }
 

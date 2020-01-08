@@ -31,3 +31,6 @@ Boilerplate code from: https://dev.twitch.tv/docs/irc/
   - !removeCommand !welcome
 - !cc
   - Lists all the current custom commands in the bot's json file
+- !song
+  - Returns the current song being played.
+  - Required Spotify OAuth to be accepted.
