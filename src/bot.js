@@ -7,6 +7,7 @@ require('dotenv').config({
 
 
 const tmi = require('tmi.js');
+const utility = require('./utility').utility;
 
 
 const cc = require('./commands').cc;
@@ -15,8 +16,8 @@ cc.init();
 const spotify = require('./spotify').s;
 spotify.init(process.env.SPOTIFY_CLIENT_ID, process.env.SPOTIFY_CLIENT_SECRET);
 
-const utility = require('./utility').utility;
-
+const apex = require('./apex').apex;
+apex.init(process.env.TRN_API_KEY, process.env.APEX_PLATFORM, process.env.APEX_USERNAME)
 
 // Define configuration options
 const opts = {
@@ -57,6 +58,9 @@ function onMessageHandler (target, context, msg, self) {
     const num = rollDice();
     client.say(target, `You rolled a ${num}`);
   } 
+  else if (commandName === '!apexstats') {
+    apex.getStats(chatMessageCallback, target);
+  }
   else if (commandName === '!song') 
   {
     spotify.getCurrentSong(chatMessageCallback, target);
