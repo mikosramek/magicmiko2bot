@@ -14,6 +14,7 @@ Boilerplate code from: https://dev.twitch.tv/docs/irc/
 - path
 - open
 - axios
+- ejs
 
 ## APIs used
 - tracker.gg

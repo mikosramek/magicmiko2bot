@@ -5,7 +5,6 @@ const path = require('path');
 const filePath = path.join(require('os').homedir() + '/.mikobot/');
 const fileName = 'commands.json';
 
-
 const cc = { 
   currentCommands: {}
 }
@@ -22,7 +21,6 @@ cc.getCommands = () => {
     }
   )
 }
-
 
 cc.addCommand = (newCommand, message, callback) => {
   //check if newCommand exists, if not

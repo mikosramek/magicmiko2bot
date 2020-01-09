@@ -1,6 +1,5 @@
 'use strict';
 
-
 const path = require('path');
 require('dotenv').config({
   path: path.join(__dirname, '../.env')
@@ -131,7 +130,7 @@ function rollDice () {
 
 // Called every time the bot connects to Twitch chat
 function onConnectedHandler (addr, port) {
-  // console.clear();
+  console.clear();
   console.log(`* Connected to ${addr}:${port}`);
   console.log('* mikobot running with these options:');
   console.log(`\tOpen chat: ${config.open_chat_on_start}`);

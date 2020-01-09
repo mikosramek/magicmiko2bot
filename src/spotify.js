@@ -12,12 +12,11 @@ spotify.localfile = 'spotify.json'
 spotify.init = (clientId, clientSecret) => {
   spotify.clientId = clientId;
   spotify.clientSecret = clientSecret;
+  spotify.port = 6969;
   
   const express = require('express');
   const app = express();
   app.set('view engine', 'ejs');
-  spotify.port = 6969;
-
   app.get('/', function (req, res) {
     const code = req.query.code;
     if(code && spotify.token === '') {
@@ -27,12 +26,9 @@ spotify.init = (clientId, clientSecret) => {
     }
     res.render('index');
   });
-
   app.listen(spotify.port, function () {
     spotify.checkForLocalKey();
   });
-
-  
 }
 
 spotify.checkForLocalKey = () => {
@@ -142,6 +138,5 @@ spotify.getCurrentSong = (callback) => {
     });
   }
 }
-
 
 exports.s = spotify;
