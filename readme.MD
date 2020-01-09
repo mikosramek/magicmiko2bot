@@ -15,6 +15,10 @@ Boilerplate code from: https://dev.twitch.tv/docs/irc/
 - open
 - axios
 
+## APIs used
+- tracker.gg
+- Spotify
+
 ## Current Commands:
 - !dice
   - A function from the tutorial that returns a random di number to chat
@@ -37,6 +41,13 @@ Boilerplate code from: https://dev.twitch.tv/docs/irc/
   - Requires Spotify OAuth to be accepted
 - !apexstats
   - It will return Apex Legends stats for the user specific in the .env file.
+
+## Config Options
+~~~~
+open_chat_on_start : true/false
+use_spotify : true/false
+use_tracker : true/false
+~~~~
 
 ## ENV file template
 ~~~~

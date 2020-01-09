@@ -123,7 +123,7 @@ function AddMinutesToDate(date, minutes) {
   return new Date(date.getTime() + minutes * 60000);
 }
 
-spotify.getCurrentSong = (callback, target) => {
+spotify.getCurrentSong = (callback) => {
   if(spotify.token !== '') {
     axios({
       method: 'GET',
@@ -135,10 +135,10 @@ spotify.getCurrentSong = (callback, target) => {
     }).then( (result) => {
       const song = result.data.item;
       const songInfo = `Current song is ${song.name}, by ${song.artists[0].name}.`;
-      callback(target, songInfo);
+      callback(songInfo);
     }).catch( (error) => {
       console.log("** Cannot get current Song");
-      callback(target, 'Current song info not available.');
+      callback('Current song info not available.');
     });
   }
 }

@@ -24,45 +24,45 @@ cc.getCommands = () => {
 }
 
 
-cc.addCommand = (newCommand, message, callback, target) => {
+cc.addCommand = (newCommand, message, callback) => {
   //check if newCommand exists, if not
-  if(newCommand in cc.currentCommands) { callback(target, `${newCommand} command already exists!`); return; }
+  if(newCommand in cc.currentCommands) { callback(`${newCommand} command already exists!`); return; }
   cc.currentCommands[newCommand] = message;
   fs.writeFile(
     filePath + fileName,
     JSON.stringify(cc.currentCommands),
     'utf-8',
     (err) => {
-      if (err) { callback(target, err); }
-      else { callback(target, `${newCommand} command added.`); }
+      if (err) { callback(err); }
+      else { callback(`${newCommand} command added.`); }
     }
   )
 }
 
-cc.updateCommand = (commandToUpdate, updatedMessage, callback, target) => {
-  if(!(commandToUpdate in cc.currentCommands)) { callback(target, `${commandToUpdate} command doesn\'t exist!`); return; }
+cc.updateCommand = (commandToUpdate, updatedMessage, callback) => {
+  if(!(commandToUpdate in cc.currentCommands)) { callback(`${commandToUpdate} command doesn\'t exist!`); return; }
   cc.currentCommands[commandToUpdate] = updatedMessage;
   fs.writeFile(
     filePath + fileName,
     JSON.stringify(cc.currentCommands),
     'utf-8',
     (err) => {
-      if (err) { callback(target, err); }
-      else { callback(target, `${commandToUpdate} command updated.`); }
+      if (err) { callback(err); }
+      else { callback(`${commandToUpdate} command updated.`); }
     }
   )
 }
 
-cc.removeCommand = (commandToRemove, callback, target) => {
-  if(!(commandToRemove in cc.currentCommands)) { callback(target, `${commandToRemove} command doesn\'t exist!`); return; }
+cc.removeCommand = (commandToRemove, callback) => {
+  if(!(commandToRemove in cc.currentCommands)) { callback(`${commandToRemove} command doesn\'t exist!`); return; }
   delete cc.currentCommands[commandToRemove];
   fs.writeFile(
     filePath + fileName,
     JSON.stringify(cc.currentCommands),
     'utf-8',
     (err) => {
-      if (err) { callback(target, err); }
-      else { callback(target, `${commandToRemove} command removed.`); }
+      if (err) { callback(err); }
+      else { callback(`${commandToRemove} command removed.`); }
     }
   )
 }

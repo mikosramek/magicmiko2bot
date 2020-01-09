@@ -1,24 +1,28 @@
 'use strict';
 
+
 const path = require('path');
 require('dotenv').config({
   path: path.join(__dirname, '../.env')
 });
 
-
+const open = require('open');
 const tmi = require('tmi.js');
 const utility = require('./utility').utility;
-
+const config = require('../config/config.json');
 
 const cc = require('./commands').cc;
 cc.init();
 
 const spotify = require('./spotify').s;
-spotify.init(process.env.SPOTIFY_CLIENT_ID, process.env.SPOTIFY_CLIENT_SECRET);
+if(config.use_spotify) {
+  spotify.init(process.env.SPOTIFY_CLIENT_ID, process.env.SPOTIFY_CLIENT_SECRET);
+}
 
 const apex = require('./apex').apex;
-apex.init(process.env.TRN_API_KEY, process.env.APEX_PLATFORM, process.env.APEX_USERNAME)
-
+if(config.use_tracker) {
+  apex.init(process.env.TRN_API_KEY, process.env.APEX_PLATFORM, process.env.APEX_USERNAME)
+}
 // Define configuration options
 const opts = {
   identity: {
@@ -58,28 +62,28 @@ function onMessageHandler (target, context, msg, self) {
     const num = rollDice();
     client.say(target, `You rolled a ${num}`);
   } 
-  else if (commandName === '!apexstats') {
-    apex.getStats(chatMessageCallback, target);
+  else if (config.use_tracker && commandName === '!apexstats') {
+    apex.getStats(chatMessageCallback);
   }
-  else if (commandName === '!song') 
+  else if (config.use_spotify && commandName === '!song') 
   {
-    spotify.getCurrentSong(chatMessageCallback, target);
+    spotify.getCurrentSong(chatMessageCallback);
   } 
   else if (commandName === '!addcommand') 
   {
     //Grab the text after the new command and make it a single string
     const newCommandMessage = utility.compressArrayOfString(commandParts.slice(2));
-    cc.addCommand(commandParts[1], newCommandMessage, chatMessageCallback, target);
+    cc.addCommand(commandParts[1], newCommandMessage, chatMessageCallback);
   } 
   else if (commandName === '!removecommand') 
   {
-    cc.removeCommand(commandParts[1], chatMessageCallback, target);
+    cc.removeCommand(commandParts[1], chatMessageCallback);
   } 
   else if (commandName === '!updatecommand') 
   {
     //Grab the text after the new command and make it a single string
     const newCommandMessage = utility.compressArrayOfString(commandParts.slice(2));
-    cc.updateCommand(commandParts[1], newCommandMessage, chatMessageCallback, target);
+    cc.updateCommand(commandParts[1], newCommandMessage, chatMessageCallback);
   } 
   else if (commandName === '!cc') 
   {
@@ -97,8 +101,8 @@ function onMessageHandler (target, context, msg, self) {
   }
 }
 
-const chatMessageCallback = (target, message) => {
-  client.say(target, message);
+const chatMessageCallback = (message) => {
+  client.say(`#${process.env.CHANNEL_NAME}`, message);
 }
 
 const listAllCommands = (target) => {
@@ -106,7 +110,7 @@ const listAllCommands = (target) => {
   for(let command in cc.currentCommands){
     message += command + ' ';
   }
-  client.say(target, message)
+  chatMessageCallback(message)
 }
 
 function onCheerHandler (target, userstate, message) {
@@ -129,5 +133,13 @@ function rollDice () {
 function onConnectedHandler (addr, port) {
   // console.clear();
   console.log(`* Connected to ${addr}:${port}`);
-  console.log('mikobot up and running!')
+  console.log('* mikobot running with these options:');
+  console.log(`\tOpen chat: ${config.open_chat_on_start}`);
+  console.log(`\tSpotify: ${config.use_spotify}`);
+  console.log(`\tApex tracker: ${config.use_tracker}`);
+  if(config.open_chat_on_start) {
+    (async () => {
+      await open(`https://www.twitch.tv/popout/${process.env.CHANNEL_NAME}/chat?popout=`);
+    })();
+  }
 }
