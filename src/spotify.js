@@ -84,6 +84,8 @@ spotify.refreshAuth = (refreshToken) => {
     console.log("** Spotify Token Refreshed!")
   }).catch( (error) => {
     console.log("** There's an error with Refreshing your spotify token.");
+    //If the refresh token is bad, we need to reauth. So make sure the file is empty, and then open the new auth link when possible
+    io.writeFile({}, spotify.localfile, spotify.openAuthLink);
   })
 }
 spotify.confirmAuth = () => {
