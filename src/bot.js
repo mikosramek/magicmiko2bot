@@ -122,6 +122,6 @@ function rollDice () {
 // Called every time the bot connects to Twitch chat
 function onConnectedHandler (addr, port) {
   // console.clear();
-  console.log('mikobot up and running!')
   console.log(`* Connected to ${addr}:${port}`);
+  console.log('mikobot up and running!')
 }
