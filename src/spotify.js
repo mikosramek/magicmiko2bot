@@ -1,7 +1,7 @@
 const axios = require('axios');
 const open = require('open');
 
-const io = new require('./io').io;
+const io = require('./io').io;
 
 const spotify = {};
 spotify.token = '';
