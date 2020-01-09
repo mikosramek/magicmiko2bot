@@ -39,11 +39,13 @@ Boilerplate code from: https://dev.twitch.tv/docs/irc/
   - It will return Apex Legends stats for the user specific in the .env file.
 
 ## ENV file template
-> BOT_USERNAME=''
-> OAUTH_TOKEN=''
-> CHANNEL_NAME=''
-> SPOTIFY_CLIENT_ID=''
-> SPOTIFY_CLIENT_SECRET=''
-> TRN_API_KEY=''
-> APEX_PLATFORM=''
-> APEX_USERNAME=''
+~~~~
+BOT_USERNAME=''
+OAUTH_TOKEN=''
+CHANNEL_NAME=''
+SPOTIFY_CLIENT_ID=''
+SPOTIFY_CLIENT_SECRET=''
+TRN_API_KEY=''
+APEX_PLATFORM=''
+APEX_USERNAME=''
+~~~~
