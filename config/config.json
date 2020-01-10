@@ -1,5 +1,5 @@
 {
-  "open_chat_on_start":true,
+  "open_chat_on_start":false,
   "use_spotify":true,
   "use_tracker":true
 }

@@ -38,7 +38,8 @@ spotify.checkForLocalKey = () => {
       spotify.openAuthLink();
     // else, check if it needs to refresh
     } else {
-      const exp = new Date(data.expires_at);
+      spotify.expiry = data.expires_at;
+      const exp = new Date(spotify.expiry);
       if(new Date() > exp){
         console.log('** Spotify Token Expired! Refreshing!');
         spotify.refreshAuth(data.refresh_token);
@@ -52,11 +53,11 @@ spotify.checkForLocalKey = () => {
 
 spotify.openAuthLink = () => {
   (async () => {
-    const url = `https://accounts.spotify.com/authorize?client_id=${spotify.clientId}&response_type=code&scope=user-read-private%20user-read-email%20user-read-currently-playing%20user-read-playback-state&redirect_uri=http://localhost:${spotify.port}/`;
+    const url = `https://accounts.spotify.com/authorize?client_id=${spotify.clientId}&response_type=code&scope=user-read-private%20user-read-email%20user-read-currently-playing%20user-read-playback-state%20playlist-modify-public%20playlist-modify-private&redirect_uri=http://localhost:${spotify.port}/`;
     await open(url);
   })();
 }
-spotify.refreshAuth = (refreshToken) => {
+spotify.refreshAuth = (refreshToken, callback) => {
   axios.post(
     'https://accounts.spotify.com/api/token', new URLSearchParams ( {
       grant_type: 'refresh_token',
@@ -80,6 +81,7 @@ spotify.refreshAuth = (refreshToken) => {
     }
     io.writeFile(data, spotify.localfile, () => {});
     console.log("** Spotify Token Refreshed!")
+    if(callback) { callback(); }
   }).catch( (error) => {
     console.log("** There's an error with Refreshing your spotify token.");
     //If the refresh token is bad, we need to reauth. So make sure the file is empty, and then open the new auth link when possible
@@ -119,24 +121,36 @@ function AddMinutesToDate(date, minutes) {
   return new Date(date.getTime() + minutes * 60000);
 }
 
-spotify.getCurrentSong = (callback) => {
-  if(spotify.token !== '') {
-    axios({
-      method: 'GET',
-      url: 'https://api.spotify.com/v1/me/player/currently-playing',
-      dataResponse: 'json',
-      headers: {
-        'Authorization': `Bearer ${spotify.token}`
-      }
-    }).then( (result) => {
-      const song = result.data.item;
-      const songInfo = `Current song is ${song.name}, by ${song.artists[0].name}.`;
-      callback(songInfo);
-    }).catch( (error) => {
-      console.log("** Cannot get current Song");
-      callback('Current song info not available.');
-    });
+spotify.checkForStaleKey = (callback) => {
+  const exp = new Date(spotify.expiry);
+  if(new Date() > exp){
+    console.log('** Spotify Token Expired! Refreshing!');
+    spotify.refreshAuth(data.refresh_token, callback);
+  }else {
+    callback();
   }
+}
+
+spotify.getCurrentSong = (callback) => {
+  spotify.checkForStaleKey(() => {
+    if(spotify.token !== '') {
+      axios({
+        method: 'GET',
+        url: 'https://api.spotify.com/v1/me/player/currently-playing',
+        dataResponse: 'json',
+        headers: {
+          'Authorization': `Bearer ${spotify.token}`
+        }
+      }).then( (result) => {
+        const song = result.data.item;
+        const songInfo = `Current song is ${song.name}, by ${song.artists[0].name}.`;
+        callback(songInfo);
+      }).catch( (error) => {
+        console.log("** Cannot get current Song");
+        callback('Current song info not available.');
+      });
+    }
+  })
 }
 
 exports.s = spotify;

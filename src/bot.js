@@ -45,6 +45,40 @@ client.on('subscription', onSubscriptionHandler);
 // Connect to Twitch:
 client.connect();
 
+
+// Moving commands into an object to get away from the giant if statement style function
+const commands = {
+  '!dice' : {
+    enabled: true,
+    exe: () => chatMessageCallback(`You rolled a ${rollDice()}`)
+  },
+  '!cc' : {
+    enabled: true,
+    exe: () => listAllCommands()
+  },
+  '!song' : {
+    enabled: config.use_spotify,
+    exe: () => { spotify.getCurrentSong(chatMessageCallback) }
+  },
+  '!apexstats' : {
+    enabled: config.use_tracker,
+    exe: () => { apex.getStats(chatMessageCallback) }
+  },
+  '!addcommand' : {
+    enabled: true,
+    exe: (command, message) => { cc.addCommand(command, message, chatMessageCallback); }
+  },
+  '!updatecommand' : {
+    enabled: true,
+    exe: (command, message) => { cc.updateCommand(command, message, chatMessageCallback); }
+  },
+  '!removecommand' : {
+    enabled: true,
+    exe: (command) => { cc.removeCommand(command, chatMessageCallback); }
+  }
+}
+
+
 // Called every time a message comes in
 function onMessageHandler (target, context, msg, self) {
   if (self) { return; } // Ignore messages from the bot
@@ -55,46 +89,21 @@ function onMessageHandler (target, context, msg, self) {
   //grab the command
   const commandName = commandParts[0].toLowerCase();
 
-  // If the command is known, let's execute it
-  if (commandName === '!dice') 
+  //Defined commands in the commands object
+  if (commandName in commands)
   {
-    const num = rollDice();
-    client.say(target, `You rolled a ${num}`);
+    if(commands[commandName].enabled) {
+      commands[commandName].exe(commandParts[1], utility.compressArrayOfString(commandParts.slice(2)))
+    };
   } 
-  else if (config.use_tracker && commandName === '!apexstats') {
-    apex.getStats(chatMessageCallback);
-  }
-  else if (config.use_spotify && commandName === '!song') 
-  {
-    spotify.getCurrentSong(chatMessageCallback);
-  } 
-  else if (commandName === '!addcommand') 
-  {
-    //Grab the text after the new command and make it a single string
-    const newCommandMessage = utility.compressArrayOfString(commandParts.slice(2));
-    cc.addCommand(commandParts[1], newCommandMessage, chatMessageCallback);
-  } 
-  else if (commandName === '!removecommand') 
-  {
-    cc.removeCommand(commandParts[1], chatMessageCallback);
-  } 
-  else if (commandName === '!updatecommand') 
-  {
-    //Grab the text after the new command and make it a single string
-    const newCommandMessage = utility.compressArrayOfString(commandParts.slice(2));
-    cc.updateCommand(commandParts[1], newCommandMessage, chatMessageCallback);
-  } 
-  else if (commandName === '!cc') 
-  {
-    listAllCommands(target);
-  } 
+  //Custom commands saved in the saved json file
   else if (commandName in cc.currentCommands) 
   {
     let name = '';
     if(commandParts[1]) { name = commandParts[1]; }
     const tmiMessage = cc.currentCommands[commandName].replace('$_', name);
     client.say(target, tmiMessage);
-  } 
+  }
   else {
     console.log(`* Unknown command ${commandName}`);
   }
@@ -104,12 +113,16 @@ const chatMessageCallback = (message) => {
   client.say(`#${process.env.CHANNEL_NAME}`, message);
 }
 
-const listAllCommands = (target) => {
-  let message = 'Current commands: ';
+const listAllCommands = () => {
+  let message = 'Custom commands: ';
   for(let command in cc.currentCommands){
     message += command + ' ';
   }
-  chatMessageCallback(message)
+  message += ' | Built in: '
+  for(let command in commands){
+    if(commands[command].enabled) message += command + ' ';
+  }
+  chatMessageCallback(message);
 }
 
 function onCheerHandler (target, userstate, message) {
