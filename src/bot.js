@@ -15,7 +15,7 @@ cc.init();
 
 const spotify = require('./spotify').s;
 if(config.use_spotify) {
-  spotify.init(process.env.SPOTIFY_CLIENT_ID, process.env.SPOTIFY_CLIENT_SECRET);
+  spotify.init(process.env.SPOTIFY_CLIENT_ID, process.env.SPOTIFY_CLIENT_SECRET, process.env.SPOTIFY_PLAYLIST_ID);
 }
 
 const apex = require('./apex').apex;
@@ -50,7 +50,7 @@ client.connect();
 const commands = {
   '!dice' : {
     enabled: true,
-    exe: () => chatMessageCallback(`You rolled a ${rollDice()}`)
+    exe: () => sayToChat(`You rolled a ${rollDice()}`)
   },
   '!cc' : {
     enabled: true,
@@ -58,23 +58,27 @@ const commands = {
   },
   '!song' : {
     enabled: config.use_spotify,
-    exe: () => { spotify.getCurrentSong(chatMessageCallback) }
+    exe: () => { spotify.getCurrentSong(sayToChat) }
+  },
+  '!sr' : {
+    enabled: config.use_spotify,
+    exe: (query, restOfQuery) => {spotify.requestSongForPlaylist(query+' '+restOfQuery, sayToChat) }
   },
   '!apexstats' : {
     enabled: config.use_tracker,
-    exe: () => { apex.getStats(chatMessageCallback) }
+    exe: () => { apex.getStats(sayToChat) }
   },
   '!addcommand' : {
     enabled: true,
-    exe: (command, message) => { cc.addCommand(command, message, chatMessageCallback); }
+    exe: (command, message) => { cc.addCommand(command, message, sayToChat); }
   },
   '!updatecommand' : {
     enabled: true,
-    exe: (command, message) => { cc.updateCommand(command, message, chatMessageCallback); }
+    exe: (command, message) => { cc.updateCommand(command, message, sayToChat); }
   },
   '!removecommand' : {
     enabled: true,
-    exe: (command) => { cc.removeCommand(command, chatMessageCallback); }
+    exe: (command) => { cc.removeCommand(command, sayToChat); }
   }
 }
 
@@ -109,7 +113,7 @@ function onMessageHandler (target, context, msg, self) {
   }
 }
 
-const chatMessageCallback = (message) => {
+const sayToChat = (message) => {
   client.say(`#${process.env.CHANNEL_NAME}`, message);
 }
 
@@ -122,7 +126,7 @@ const listAllCommands = () => {
   for(let command in commands){
     if(commands[command].enabled) message += command + ' ';
   }
-  chatMessageCallback(message);
+  sayToChat(message);
 }
 
 function onCheerHandler (target, userstate, message) {
@@ -143,7 +147,7 @@ function rollDice () {
 
 // Called every time the bot connects to Twitch chat
 function onConnectedHandler (addr, port) {
-  console.clear();
+  // console.clear();
   console.log(`* Connected to ${addr}:${port}`);
   console.log('* mikobot running with these options:');
   console.log(`\tOpen chat: ${config.open_chat_on_start}`);
@@ -154,4 +158,5 @@ function onConnectedHandler (addr, port) {
       await open(`https://www.twitch.tv/popout/${process.env.CHANNEL_NAME}/chat?popout=`);
     })();
   }
+  // spotify.addSongToPlaylist(sayToChat);
 }

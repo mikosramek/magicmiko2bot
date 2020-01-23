@@ -5,13 +5,16 @@ const open = require('open');
 
 const io = require('./io').io;
 
+const utility = require('./utility').utility;
+
 const spotify = {};
 spotify.token = '';
 spotify.localfile = 'spotify.json'
 
-spotify.init = (clientId, clientSecret) => {
+spotify.init = (clientId, clientSecret, playlistID) => {
   spotify.clientId = clientId;
   spotify.clientSecret = clientSecret;
+  spotify.playlistID = playlistID;
   spotify.port = 6969;
   
   const express = require('express');
@@ -39,6 +42,7 @@ spotify.checkForLocalKey = () => {
     // else, check if it needs to refresh
     } else {
       spotify.expiry = data.expires_at;
+      spotify.refresh_token = data.refresh_token;
       const exp = new Date(spotify.expiry);
       if(new Date() > exp){
         console.log('** Spotify Token Expired! Refreshing!');
@@ -125,32 +129,90 @@ spotify.checkForStaleKey = (callback) => {
   const exp = new Date(spotify.expiry);
   if(new Date() > exp){
     console.log('** Spotify Token Expired! Refreshing!');
-    spotify.refreshAuth(data.refresh_token, callback);
+    spotify.refreshAuth(spotify.refresh_token, callback);
   }else {
     callback();
   }
 }
 
-spotify.getCurrentSong = (callback) => {
+spotify.makeACall = (url, method, callback, errCallback, params) => {
   spotify.checkForStaleKey(() => {
     if(spotify.token !== '') {
       axios({
-        method: 'GET',
-        url: 'https://api.spotify.com/v1/me/player/currently-playing',
+        method: method,
+        url: url,
         dataResponse: 'json',
         headers: {
           'Authorization': `Bearer ${spotify.token}`
-        }
-      }).then( (result) => {
-        const song = result.data.item;
-        const songInfo = `Current song is ${song.name}, by ${song.artists[0].name}.`;
-        callback(songInfo);
-      }).catch( (error) => {
-        console.log("** Cannot get current Song");
-        callback('Current song info not available.');
-      });
+        },
+        params: params
+      }).then((result) => callback(result)).catch((error) => errCallback(error));
     }
+  });
+}
+
+spotify.getCurrentSong = (callback) => {
+  spotify.makeACall('https://api.spotify.com/v1/me/player/currently-playing', 'GET',
+  (result) => {
+    const song = result.data.item;
+    const songInfo = `Current song is ${song.name}, by ${song.artists[0].name}.`;
+    callback(songInfo);
+  }, 
+  (error) => {
+    console.log("** Cannot get current Song");
+    callback('Current song info not available.');
+  });
+}
+
+
+spotify.requestSongForPlaylist = (query, callback) => {
+  console.log('**', query, 'was requested');
+  if(query === undefined) { callback('Song requests follow the format of !sr [query/uri]. Either find the spotify URI from spotify, or enter a search term.'); return; }
+  if(query.includes('spotify:track:')) { 
+    spotify.addSongToPlaylist(query, callback);
+  } else {
+    spotify.searchForSong(query, callback);
+  }
+}
+spotify.searchForSong = (query, callback) => {
+  spotify.makeACall('https://api.spotify.com/v1/search', 'GET',
+  (result) => {
+    const possibleTracks = result.data.tracks.items;
+    let addedASong = false;
+    possibleTracks.forEach((track) => {
+      if(track.name === query && !addedASong) {
+        callback(`${track.name} added to the playlist.`);
+        spotify.addSongToPlaylist(track.uri, () => {});
+        addedASong = true;
+        return;
+      }
+    })
+    if(!addedASong){
+      const track = result.data.tracks.items[0];
+      callback(`${track.name} by  added to the playlist.`);
+      spotify.addSongToPlaylist(track.uri, () => {});
+    }
+  },
+  (error) => {
+    console.log(error);
+    console.log('** Cannot find a song with that name.');
+    callback(`Cannot find a song named ${query}.`)
+  }, {
+    q: utility.encodeSpaces(query),
+    type: 'track'
   })
+}
+spotify.addSongToPlaylist = (query, callback) => {
+  spotify.makeACall(`https://api.spotify.com/v1/playlists/${spotify.playlistID}/tracks`, 'POST',
+  (result) => {
+    // const userID = result.data.id;
+    callback('Song added successfully!');
+  }, 
+  (error) => {
+    console.log(error);
+  }, {
+    uris: query
+  });
 }
 
 exports.s = spotify;

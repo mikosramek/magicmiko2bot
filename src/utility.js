@@ -10,5 +10,9 @@ utility.compressArrayOfString = (array) => {
   return string;
 }
 
+utility.encodeSpaces = (string) => {
+  return string.replace(/ /gi, '+');
+}
+
 
 exports.utility = utility;
