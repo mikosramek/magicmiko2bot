@@ -164,7 +164,7 @@ spotify.getCurrentSong = (callback) => {
   spotify.makeACall('https://api.spotify.com/v1/me/player/currently-playing', 'GET', '', '',
   (result) => {
     const song = result.data.item;
-    const songInfo = `Current song is ${song.name}, by ${song.artists[0].name}.`;
+    const songInfo = `Current song is ${song.name}, by ${song.artists[0].name} -> ${song.external_urls.spotify}`;
     callback(songInfo);
   }, 
   (error) => {
