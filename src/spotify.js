@@ -12,6 +12,7 @@ spotify.token = '';
 spotify.localFile = 'spotify.json';
 spotify.errorFile = 'spotify_errors.txt';
 
+
 spotify.init = (clientId, clientSecret, playlistID) => {
   spotify.clientId = clientId;
   spotify.clientSecret = clientSecret;
@@ -58,7 +59,7 @@ spotify.checkForLocalKey = () => {
 
 spotify.openAuthLink = () => {
   (async () => {
-    const url = `https://accounts.spotify.com/authorize?client_id=${spotify.clientId}&response_type=code&scope=user-read-private%20user-read-email%20user-read-currently-playing%20user-read-playback-state%20playlist-modify-public%20playlist-modify-private&redirect_uri=http://localhost:${spotify.port}/`;
+    const url = `https://accounts.spotify.com/authorize?client_id=${spotify.clientId}&response_type=code&scope=user-read-private%20user-read-email%20user-read-currently-playing%20user-read-playback-state%20playlist-modify-public%20playlist-modify-private%20user-modify-playback-state&redirect_uri=http://localhost:${spotify.port}/`;
     await open(url);
   })();
 }
@@ -85,7 +86,7 @@ spotify.refreshAuth = (refreshToken, callback) => {
       refresh_token: response.data.refresh_token
     }
     io.writeFile(data, spotify.localFile, () => {});
-    console.log("** Spotify Token Refreshed!")
+    console.log("** Spotify Token Refreshed!");
     if(callback) { callback(); }
   }).catch( (error) => {
     console.log("** There's an error with Refreshing your spotify token.");
@@ -137,7 +138,11 @@ spotify.checkForStaleKey = (callback) => {
   }
 }
 
-spotify.makeACall = (url, method, callback, errCallback, params) => {
+spotify.logError = (error) => {
+  io.appendToFile(new Date() + error, spotify.errorFile, () => {});
+}
+
+spotify.makeACall = (url, method, params, data, callback, errCallback) => {
   spotify.checkForStaleKey(() => {
     if(spotify.token !== '') {
       axios({
@@ -145,16 +150,18 @@ spotify.makeACall = (url, method, callback, errCallback, params) => {
         url: url,
         dataResponse: 'json',
         headers: {
-          'Authorization': `Bearer ${spotify.token}`
+          'Authorization': `Bearer ${spotify.token}`,
+          'Content-Type': 'application/json'
         },
-        params: params
+        params: params,
+        data: data
       }).then((result) => callback(result)).catch((error) => errCallback(error));
     }
   });
 }
 
 spotify.getCurrentSong = (callback) => {
-  spotify.makeACall('https://api.spotify.com/v1/me/player/currently-playing', 'GET',
+  spotify.makeACall('https://api.spotify.com/v1/me/player/currently-playing', 'GET', '', '',
   (result) => {
     const song = result.data.item;
     const songInfo = `Current song is ${song.name}, by ${song.artists[0].name}.`;
@@ -163,7 +170,7 @@ spotify.getCurrentSong = (callback) => {
   (error) => {
     console.log("** Cannot get current Song");
     callback('Current song info not available.');
-    io.appendToFile(error.data, spotify.errorFile, () => {});
+    spotify.logError(error.data);
   });
 }
 
@@ -173,18 +180,18 @@ spotify.requestSongForPlaylist = (query, callback) => {
   if(query === undefined) { callback('Song requests follow the format of !sr [query/uri]. Either find the spotify URI from spotify, or enter a search term.'); return; }
   if(query.includes('spotify:track:')) { 
     spotify.addSongToPlaylist(query.trim(), callback);
-  } else {
+  }else {
     spotify.searchForSong(query, callback);
   }
 }
 spotify.searchForSong = (query, callback) => {
-  spotify.makeACall('https://api.spotify.com/v1/search', 'GET',
+  spotify.makeACall('https://api.spotify.com/v1/search', 'GET', { q: utility.encodeSpaces(query), type: 'track' }, '', 
   (result) => {
     const possibleTracks = result.data.tracks.items;
     let addedASong = false;
     possibleTracks.forEach((track) => {
       if(track.name === query && !addedASong) {
-        callback(`${track.name} added to the playlist.`);
+        callback(`${track.name} by ${track.artists[0].name} added to the playlist.`);
         spotify.addSongToPlaylist(track.uri, () => {});
         addedASong = true;
         return;
@@ -192,34 +199,143 @@ spotify.searchForSong = (query, callback) => {
     })
     if(!addedASong && result.data.tracks.items[0] !== undefined){
       const track = result.data.tracks.items[0];
-      callback(`${track.name} by  added to the playlist.`);
+      callback(`${track.name} by ${track.artists[0].name} added to the playlist.`);
       spotify.addSongToPlaylist(track.uri, () => {});
-    }else{
+    }else if(!addedASong) {
       spotify.trackNotFound(query, callback, '');
     }
   },
   (error) => {
     spotify.trackNotFound(query, callback, error);
-  }, {
-    q: utility.encodeSpaces(query),
-    type: 'track'
-  })
+  }, )
 }
 spotify.trackNotFound = (query, callback, error) => {
   console.log('** Cannot find a song with that name.');
   callback(`Cannot find a song named ${query}.`);
-  if(error) io.appendToFile(new Date() + error, spotify.errorFile, function() {console.log('error logged to file')});
+  if(error) spotify.logError(error);
 }
-spotify.addSongToPlaylist = (query, callback) => {
-  spotify.makeACall(`https://api.spotify.com/v1/playlists/${spotify.playlistID}/tracks`, 'POST',
+
+spotify.addSongToPlaylist = (uri, callback) => {
+  spotify.makeACall(`https://api.spotify.com/v1/playlists/${spotify.playlistID}/tracks`, 'POST', { uris: uri }, '',
   (result) => {
     callback('Song added successfully!');
+    spotify.updateSongQueue(uri);
   }, 
   (error) => {
     callback('Cannot add that song.');
-    io.appendToFile(new Date() + error, spotify.errorFile, () => {});
-  }, {
-    uris: query
+    spotify.logError(error);
+  });
+}
+
+spotify.updateSongQueue = (uri) => {
+  console.log('** Searching for',uri);
+  spotify.makeACall(`https://api.spotify.com/v1/tracks/${uri.replace('spotify:track:', '')}`,'GET', '', '',
+  (result) => {
+    spotify.scheduleTrackRemoval(uri);
+    spotify.playPlaylist();
+  },
+  (error) => {
+    console.log(error);
+    spotify.logError(error);
+  })
+}
+
+spotify.scheduleTrackRemoval = (uri) => {
+  //get new total playlist time
+  //set timeout for remove
+  spotify.makeACall(`https://api.spotify.com/v1/playlists/${spotify.playlistID}/tracks`, 'GET', '', '',
+  (result) => {
+    const tracks = result.data.items;
+    const totalLength = tracks.reduce((total, entry) => {
+      return total + entry.track.duration_ms;
+    }, 0);
+
+    setTimeout(() => spotify.removeTrackFromPlaylist(uri), totalLength);
+  },
+  (error) => {
+    spotify.logError(error);
+  })
+}
+
+spotify.removeTrackFromPlaylist = (trackUriToRemove) => {
+  spotify.makeACall(`https://api.spotify.com/v1/playlists/${spotify.playlistID}/tracks`, 'GET', '', '',
+  (result) => {
+    const queueInfo = result.data.items; //this is an array of tracks
+    let position = -1;
+    for(let i = 0; i < queueInfo.length; i++){
+      if(queueInfo[i].track.uri === trackUriToRemove){
+        position = i;
+        break;
+      }
+    }
+    if(position === -1) { return; }
+    const trackToDelete = { tracks: [ { 'uri':trackUriToRemove, 'positions': [position] } ] }
+    console.log(`** Attempting to remove ${trackUriToRemove}`);
+    spotify.makeACall(`https://api.spotify.com/v1/playlists/${spotify.playlistID}/tracks`,'DELETE', '', trackToDelete,
+      (result) => {
+        console.log(`** Removed ${trackUriToRemove}`);
+      }, 
+      (error) => {
+        spotify.logError(error);
+      }
+    );
+  },
+  (error) => {
+    spotify.logError(error);
+  });
+}
+spotify.clearPlaylist = () => {
+  spotify.makeACall(`https://api.spotify.com/v1/playlists/${spotify.playlistID}/tracks`, 'GET', '', '',
+  (result) => {
+    const queueInfo = result.data.items;
+    const trackInfo = {};
+    queueInfo.forEach((entry, i) => {
+      if(trackInfo[entry.track.uri] === undefined){
+        trackInfo[entry.track.uri] = [i];
+      }else {
+        trackInfo[entry.track.uri].push(i);
+      }
+    });
+    const tracksToDelete = {tracks:[]};
+    for(let key in trackInfo){
+      const trackData = {
+        'uri': key,
+        'positions': trackInfo[key]
+      }
+      tracksToDelete.tracks.push(trackData);
+    }
+    spotify.makeACall(`https://api.spotify.com/v1/playlists/${spotify.playlistID}/tracks`,'DELETE', '', tracksToDelete,
+      (result) => {
+        console.log('** Playlist cleared.');
+      }, 
+      (error) => {
+        spotify.logError(error);
+      }
+    );
+  },
+  (error) => {
+    console.log(error);
+    spotify.logError(error);
+  })
+}
+
+spotify.playPlaylist = () => {
+  spotify.makeACall('https://api.spotify.com/v1/me/player', 'GET', '', '',
+  (result) => {
+    const playing = result.data.is_playing;
+    console.log(`** Music currently ${playing ? 'is' : 'is not'} playing.`);
+    if(!playing){
+      spotify.makeACall(`https://api.spotify.com/v1/me/player/play`, 'PUT', '', { 'context_uri': `spotify:playlist:${spotify.playlistID}` },
+        (result) => {
+          // console.log(result);
+        },
+        (error) => {
+          spotify.logError(error);
+        });
+    }
+  },
+  (error) => {
+    spotify.logError(error);
   });
 }
 

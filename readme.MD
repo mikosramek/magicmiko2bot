@@ -23,16 +23,16 @@ Boilerplate code from: https://dev.twitch.tv/docs/irc/
 ## Current Commands:
 - !dice
   - A function from the tutorial that returns a random di number to chat
-- !addCommand
+- !addcom
   - Adds a command into the bot's local .json file for commands
   - ex: !addCommand !location Miko is currently located in Toronto
   - Adding in $_ can allow the command to take in a single argument
   - ex: !addCommand !welcome Welcome to the chat $_! Enjoy your stay!
     - !welcome Miko -> Welcome to the chat Miko! Enjoy your stay
-- !updateCommand
+- !updatecom
   - Will update the command specified
   - !updateCommand !command new text
-- !removeCommand
+- !delcom
   - Will remove the command
   - !removeCommand !welcome
 - !cc
@@ -40,6 +40,11 @@ Boilerplate code from: https://dev.twitch.tv/docs/irc/
 - !song
   - Returns the current song being played
   - Requires Spotify OAuth to be accepted
+- !clearsongs
+  - Clears all the songs in the linked Spotify Playlist
+- !sr
+  - Will add a song to the linked Spotify Playlist
+  - Can take general search terms, or a Spotify URI
 - !apexstats
   - It will return Apex Legends stats for the user specific in the .env file.
 
