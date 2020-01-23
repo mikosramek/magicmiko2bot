@@ -9,7 +9,8 @@ const utility = require('./utility').utility;
 
 const spotify = {};
 spotify.token = '';
-spotify.localfile = 'spotify.json'
+spotify.localFile = 'spotify.json';
+spotify.errorFile = 'spotify_errors.txt';
 
 spotify.init = (clientId, clientSecret, playlistID) => {
   spotify.clientId = clientId;
@@ -35,9 +36,9 @@ spotify.init = (clientId, clientSecret, playlistID) => {
 }
 
 spotify.checkForLocalKey = () => {
-  io.readFile(spotify.localfile, (data) => {
+  io.readFile(spotify.localFile, (data) => {
     //If the data has nothing in it, then just auth
-    if(data === ''){
+    if(data === '' || data.constructor === Object && Object.entries(data).length === 0){
       spotify.openAuthLink();
     // else, check if it needs to refresh
     } else {
@@ -83,13 +84,13 @@ spotify.refreshAuth = (refreshToken, callback) => {
       access_token: response.data.access_token,
       refresh_token: response.data.refresh_token
     }
-    io.writeFile(data, spotify.localfile, () => {});
+    io.writeFile(data, spotify.localFile, () => {});
     console.log("** Spotify Token Refreshed!")
     if(callback) { callback(); }
   }).catch( (error) => {
     console.log("** There's an error with Refreshing your spotify token.");
     //If the refresh token is bad, we need to reauth. So make sure the file is empty, and then open the new auth link when possible
-    io.writeFile({}, spotify.localfile, spotify.openAuthLink);
+    io.writeFile({}, spotify.localFile, spotify.openAuthLink);
   })
 }
 spotify.confirmAuth = () => {
@@ -115,9 +116,10 @@ spotify.confirmAuth = () => {
       access_token: response.data.access_token,
       refresh_token: response.data.refresh_token
     }
-    io.writeFile(data, spotify.localfile, () => {});
+    io.writeFile(data, spotify.localFile, () => {});
   }).catch( (error) => {
     console.log("** There's an error with Spotify Permissions");
+    io.appendToFile(error.data, spotify.errorFile, () => {});
   })
 }
 
@@ -161,6 +163,7 @@ spotify.getCurrentSong = (callback) => {
   (error) => {
     console.log("** Cannot get current Song");
     callback('Current song info not available.');
+    io.appendToFile(error.data, spotify.errorFile, () => {});
   });
 }
 
@@ -169,7 +172,7 @@ spotify.requestSongForPlaylist = (query, callback) => {
   console.log('**', query, 'was requested');
   if(query === undefined) { callback('Song requests follow the format of !sr [query/uri]. Either find the spotify URI from spotify, or enter a search term.'); return; }
   if(query.includes('spotify:track:')) { 
-    spotify.addSongToPlaylist(query, callback);
+    spotify.addSongToPlaylist(query.trim(), callback);
   } else {
     spotify.searchForSong(query, callback);
   }
@@ -187,29 +190,34 @@ spotify.searchForSong = (query, callback) => {
         return;
       }
     })
-    if(!addedASong){
+    if(!addedASong && result.data.tracks.items[0] !== undefined){
       const track = result.data.tracks.items[0];
       callback(`${track.name} by  added to the playlist.`);
       spotify.addSongToPlaylist(track.uri, () => {});
+    }else{
+      spotify.trackNotFound(query, callback, '');
     }
   },
   (error) => {
-    console.log(error);
-    console.log('** Cannot find a song with that name.');
-    callback(`Cannot find a song named ${query}.`)
+    spotify.trackNotFound(query, callback, error);
   }, {
     q: utility.encodeSpaces(query),
     type: 'track'
   })
 }
+spotify.trackNotFound = (query, callback, error) => {
+  console.log('** Cannot find a song with that name.');
+  callback(`Cannot find a song named ${query}.`);
+  if(error) io.appendToFile(new Date() + error, spotify.errorFile, function() {console.log('error logged to file')});
+}
 spotify.addSongToPlaylist = (query, callback) => {
   spotify.makeACall(`https://api.spotify.com/v1/playlists/${spotify.playlistID}/tracks`, 'POST',
   (result) => {
-    // const userID = result.data.id;
     callback('Song added successfully!');
   }, 
   (error) => {
-    console.log(error);
+    callback('Cannot add that song.');
+    io.appendToFile(new Date() + error, spotify.errorFile, () => {});
   }, {
     uris: query
   });

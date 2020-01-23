@@ -57,6 +57,7 @@ OAUTH_TOKEN=''
 CHANNEL_NAME=''
 SPOTIFY_CLIENT_ID=''
 SPOTIFY_CLIENT_SECRET=''
+SPOTIFY_PLAYLIST_ID=''
 TRN_API_KEY=''
 APEX_PLATFORM=''
 APEX_USERNAME=''
@@ -64,40 +65,4 @@ APEX_USERNAME=''
 
 ## Future Goals
 - Rework the spotify url to allow config for permissions
-- Get the Apex API working better somehow
-- Song request command -> have the spotify api add it to a specific playlist / queue on my account
-  - Maybe command could be something like !sr [type=query/uri] [uri/type] [query]
-  - https://api.spotify.com/v1/me to get the id -> might just be the username? if so, throw into .env
-    - headers -> Authorization
-  - https://api.spotify.com/v1/users/{user_id}/playlists
-    - headers:
-      - Authorization
-      - Content-Type: application/json
-    - body params:
-      - name
-  - This returns an object
-    - id
-    - href
-  - Store this playlist id in a config file?
-  - If it still exists ->
-  - https://api.spotify.com/v1/playlists/{playlist_id}
-    - headers:
-      - Authorization
-  - Then don't create a new one! And just add to that one instead
-  - Add tracks!
-  - https://api.spotify.com/v1/search
-  - https://developer.spotify.com/documentation/web-api/reference/search/search/
-    - headers:
-      - Authorization
-    - Query Params:
-      - q
-      - type: album , artist, playlist, or track. 
-      - limit
-  - POST https://api.spotify.com/v1/playlists/{playlist_id}/tracks
-    - headers:
-      - Authorization
-      - Content-Type: application/json
-    - Query Params:
-      - uris=spotify:track:4iV5W9uYEdYUVa79Axb7Rh, spotify:track:1301WleyT98MSxVHPZCA6M
-- Make sure that the checkForStaleKey() actually works with the !song command
 - Song Link command

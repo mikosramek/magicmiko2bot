@@ -18,6 +18,19 @@ const io = {
         }
     ));
   },
+  appendToFile: function(data, fileName, callback) {
+    this.checkFile(
+      fileName,
+      fs.appendFile(
+        io.filePath+fileName,
+        JSON.stringify(data)+'\n',
+        'utf-8',
+        (err) => {
+          if(err) throw err;
+          else callback();
+        }
+      ));
+  },
   readFile: function(fileName, callback) {
     this.checkFile(
       fileName, 
